@@ -23,6 +23,7 @@ class BaseConfig:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     WTF_CSRF_TIME_LIMIT = None
+    WTF_CSRF_HEADERS = ["X-CSRFToken", "X-CSRF-Token"]
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_DEFAULT = os.environ.get("RATELIMIT_DEFAULT", "60 per minute")
@@ -110,7 +111,7 @@ def resolve_config(name=None):
 
 def apply_environment(app, config_class):
     """Read process environment at startup so values are not frozen at import."""
-    if config_class is TestConfig:
+    if issubclass(config_class, TestConfig):
         return
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "")
     app.config["LOG_LEVEL"] = os.environ.get("LOG_LEVEL", "INFO")
