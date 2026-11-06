@@ -20,11 +20,11 @@ The product is a navigation tool, not a brochure.
 - Leaflet and the typeface are served by this app. OpenStreetMap tiles stay on the OpenStreetMap tile host, with the required attribution.
 - Admin screens are tables with filters and written status, not a wall of statistic cards.
 
-Screens are built in later phases. Phase 1 ships the application shell only.
+Sign-in, registration, and the signed-in home screen are in place. The map, mobility profiles, and reports follow.
 
-## Phase 1
+## What is included
 
-This revision contains the Flask application factory, configuration, JSON logging, CSRF, rate limiting, security headers, `GET /api/health`, Docker, Nginx, and CI. Accounts, the graph, routing, and the map are not in this revision.
+The Flask application factory, configuration, JSON logging, CSRF, rate limiting, security headers, `GET /api/health`, Docker, Nginx, and CI. Accounts use server-side sessions. Registration creates a user. The first administrator is created with a command, not a public form. Pathway data and routing are not in this revision.
 
 ## Local setup
 
@@ -41,12 +41,24 @@ Edit `.env`. Set `SECRET_KEY` to a long random string and `OSM_USER_AGENT` to a 
 
 ```powershell
 $env:APP_ENV = "development"
+python -m flask --app wsgi:app db upgrade
 python -m flask --app wsgi:app run
 ```
 
-Health check: `http://127.0.0.1:5000/api/health`
+Open `http://127.0.0.1:5000/`. Health check: `http://127.0.0.1:5000/api/health`.
 
-Development stores SQLite at `instance/dev.db`. Tests use an in-memory database. Production uses MySQL.
+Development stores SQLite at `instance/dev.db`. Tests apply the Alembic migrations to a temporary database. Production uses MySQL, and the container runs `flask db upgrade` before Gunicorn starts.
+
+Create the first administrator in the same environment as the app. The password is read from the environment so it is not stored in the shell history as a command argument.
+
+```powershell
+$env:ADMIN_NAME = "Campus Admin"
+$env:ADMIN_EMAIL = "admin@university.edu"
+$env:ADMIN_PASSWORD = "a-long-password"
+python -m flask --app wsgi:app create-admin
+```
+
+The command refuses to change the role of an email that already has an account. Passwords are stored with scrypt. A new password must be 10 to 128 characters. Sign-in failures use one message for an unknown email, a wrong password, and a deactivated account.
 
 ```powershell
 ruff check .
@@ -61,7 +73,7 @@ Create `.env` from `.env.example` with production values: `APP_ENV=production`, 
 docker compose up --build
 ```
 
-The site is published on port 8080. Nginx proxies to Gunicorn. MySQL data is the named volume `mysql_data`.
+The site is published on port 8080. The app container applies database migrations, then Nginx proxies to Gunicorn. MySQL data is the named volume `mysql_data`. Run `create-admin` inside the app container, with `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` set for that one command.
 
 TLS is expected in front of this stack (the host reverse proxy or a load balancer). The app sends HSTS only when the forwarded request is HTTPS. Set `TRUST_PROXY=1` only for that proxy, which Compose already does for the bundled Nginx.
 
