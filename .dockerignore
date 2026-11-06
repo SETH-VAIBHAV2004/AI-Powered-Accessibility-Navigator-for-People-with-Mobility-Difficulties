@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+.env
+instance
+uploads
+logs
+data/cache
+evaluation_output
+**/__pycache__
+.pytest_cache
+.ruff_cache
+*.db
+*.md
+!README.md
