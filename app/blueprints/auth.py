@@ -1,4 +1,13 @@
-from flask import Blueprint, jsonify, redirect, request, session, url_for
+from flask import (
+    Blueprint,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from flask_login import current_user, login_required, login_user, logout_user
 from flask_wtf.csrf import generate_csrf
 
@@ -69,6 +78,86 @@ def me():
     return jsonify(user=current_user.to_public_dict())
 
 
+@auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
+def login_page():
+    if current_user.is_authenticated:
+        return redirect(url_for("pages.home"))
+    errors = {}
+    email = ""
+    if request.method == "POST":
+        email = request.form.get("email", "")
+        user = authenticate(email, request.form.get("password"))
+        if user is None:
+            errors["form"] = "The email or password is incorrect."
+        else:
+            _start_session(user)
+            return redirect(_next_or_home())
+    return _form_response("login.html", errors, email=_text(email))
+
+
+@auth_bp.route("/register", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
+def register_page():
+    if current_user.is_authenticated:
+        return redirect(url_for("pages.home"))
+    errors = {}
+    name = ""
+    email = ""
+    if request.method == "POST":
+        name = request.form.get("name", "")
+        email = request.form.get("email", "")
+        try:
+            user = register_user(name, email, request.form.get("password"))
+        except AccountError as exc:
+            errors = exc.fields
+        else:
+            _start_session(user)
+            return redirect(url_for("pages.home"))
+    return _form_response("register.html", errors, name=_text(name), email=_text(email))
+
+
+@auth_bp.post("/logout")
+@login_required
+def logout_page():
+    logout_user()
+    return redirect(url_for("auth.login_page"))
+
+
 def _start_session(user):
     session.clear()
     login_user(user, remember=False)
+
+
+def _form_response(template, errors, **context):
+    status = 400 if errors else 200
+    body = render_template(template, errors=errors, next_target=_safe_next(), **context)
+    return make_response(body, status)
+
+
+def _next_or_home():
+    target = _safe_next()
+    if target:
+        return target
+    return url_for("pages.home")
+
+
+def _safe_next():
+    for source in (request.form, request.args):
+        candidate = source.get("next")
+        if _is_local_path(candidate):
+            return candidate
+    return ""
+
+
+def _is_local_path(candidate):
+    return (
+        isinstance(candidate, str)
+        and candidate.startswith("/")
+        and not candidate.startswith("//")
+        and "\\" not in candidate
+    )
+
+
+def _text(value):
+    return value if isinstance(value, str) else ""

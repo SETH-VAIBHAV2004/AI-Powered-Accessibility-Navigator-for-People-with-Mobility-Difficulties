@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Page not found · Accessibility Navigator{% endblock %}
+{% block content %}
+  <section class="panel">
+    <h1>Page not found</h1>
+    <p class="lede">That address is not part of this application.</p>
+    <a class="button button-primary" href="{{ url_for('pages.home') }}">Back to the start</a>
+  </section>
+{% endblock %}

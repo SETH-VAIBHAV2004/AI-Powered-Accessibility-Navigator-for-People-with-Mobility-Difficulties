@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Accessibility Navigator{% endblock %}
+{% block content %}
+  <section class="panel">
+    <h1>Sign in</h1>
+    <p class="lede">Use the email and password for your account.</p>
+    {% if errors.form %}
+      <div class="form-alert" role="alert" id="login-error">
+        <p>{{ errors.form }}</p>
+      </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('auth.login_page') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if next_target %}<input type="hidden" name="next" value="{{ next_target }}">{% endif %}
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required value="{{ email }}" {% if errors.form %}aria-invalid="true" aria-describedby="login-error"{% endif %}>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required {% if errors.form %}aria-invalid="true" aria-describedby="login-error"{% endif %}>
+      </div>
+      <button class="button button-primary button-block" type="submit">Sign in</button>
+    </form>
+    <p class="form-note">No account yet? <a href="{{ url_for('auth.register_page') }}">Create one</a>.</p>
+  </section>
+{% endblock %}

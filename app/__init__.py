@@ -1,11 +1,13 @@
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_wtf.csrf import CSRFError
+from werkzeug.exceptions import Forbidden
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.blueprints.auth import auth_bp
 from app.blueprints.health import health_bp
+from app.blueprints.pages import pages_bp
 from app.config import apply_environment, load_local_env, resolve_config
 from app.extensions import csrf, db, limiter, login_manager, migrate
 from app.logging_config import configure_logging
@@ -34,6 +36,7 @@ def create_app(config_class=None):
     register_security_headers(app)
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(pages_bp)
     _register_error_handlers(app)
     app.logger.info("application started config=%s", selected.__name__)
     return app
@@ -42,7 +45,9 @@ def create_app(config_class=None):
 def _register_error_handlers(app):
     @app.errorhandler(404)
     def not_found(_error):
-        return jsonify(error="not_found"), 404
+        if request.path.startswith("/api/"):
+            return jsonify(error="not_found"), 404
+        return render_template("not_found.html"), 404
 
     @app.errorhandler(500)
     def server_error(_error):
@@ -53,7 +58,15 @@ def _register_error_handlers(app):
     def rate_limited(_error):
         return jsonify(error="rate_limited"), 429
 
+    @app.errorhandler(Forbidden)
+    def forbidden(_error):
+        if request.path.startswith("/api/"):
+            return jsonify(error="forbidden"), 403
+        return render_template("forbidden.html"), 403
+
     @app.errorhandler(CSRFError)
     def csrf_failed(error):
         app.logger.info("csrf rejected path=%s reason=%s", request.path, error.description)
-        return jsonify(error="csrf_failed"), 400
+        if request.path.startswith("/api/"):
+            return jsonify(error="csrf_failed"), 400
+        return render_template("csrf_error.html"), 400

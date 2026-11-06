@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Create account · Accessibility Navigator{% endblock %}
+{% block content %}
+  <section class="panel">
+    <h1>Create account</h1>
+    <p class="lede">This creates a personal account. Administrator access is issued separately.</p>
+    {% if errors %}
+      <div class="form-alert" role="alert">
+        <p>Check the fields below.</p>
+        <ul>
+          {% for key, message in errors.items() %}
+            <li><a href="#{{ key }}">{{ message }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('auth.register_page') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" autocomplete="name" required maxlength="120" value="{{ name }}" {% if errors.name %}aria-invalid="true" aria-describedby="name-error"{% endif %}>
+        {% if errors.name %}<p id="name-error" class="field-error">{{ errors.name }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required value="{{ email }}" {% if errors.email %}aria-invalid="true" aria-describedby="email-error"{% endif %}>
+        {% if errors.email %}<p id="email-error" class="field-error">{{ errors.email }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" {% if errors.password %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
+        <p id="password-hint" class="field-hint">Use 10 to 128 characters.</p>
+        {% if errors.password %}<p id="password-error" class="field-error">{{ errors.password }}</p>{% endif %}
+      </div>
+      <button class="button button-primary button-block" type="submit">Create account</button>
+    </form>
+    <p class="form-note">Already registered? <a href="{{ url_for('auth.login_page') }}">Sign in</a>.</p>
+  </section>
+{% endblock %}

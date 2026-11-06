@@ -12,6 +12,7 @@ def register_security_headers(app):
             "default-src 'self'; "
             "img-src 'self' data: https://tile.openstreetmap.org; "
             "style-src 'self'; "
+            "font-src 'self'; "
             "script-src 'self'; "
             "connect-src 'self'; "
             "frame-ancestors 'none'; "
@@ -23,6 +24,7 @@ def register_security_headers(app):
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
         if request.is_secure:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        if request.path.startswith("/api/"):
+        private_pages = {"pages.home", "auth.login_page", "auth.register_page"}
+        if request.path.startswith("/api/") or request.endpoint in private_pages:
             response.headers["Cache-Control"] = "no-store"
         return response
