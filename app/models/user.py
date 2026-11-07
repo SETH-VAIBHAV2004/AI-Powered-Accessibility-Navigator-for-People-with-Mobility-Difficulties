@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from flask_login import UserMixin
-from sqlalchemy import Boolean, CheckConstraint, DateTime, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -24,6 +24,10 @@ class User(UserMixin, db.Model):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
+    )
+    default_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("mobility_profiles.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     def set_password(self, password):
