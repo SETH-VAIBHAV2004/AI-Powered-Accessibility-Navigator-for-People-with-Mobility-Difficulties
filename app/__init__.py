@@ -8,6 +8,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.blueprints.auth import auth_bp
 from app.blueprints.health import health_bp
 from app.blueprints.pages import pages_bp
+from app.blueprints.profiles import profiles_bp
 from app.cli import register_cli
 from app.config import apply_environment, load_local_env, resolve_config
 from app.extensions import csrf, db, limiter, login_manager, migrate
@@ -38,6 +39,7 @@ def create_app(config_class=None):
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(pages_bp)
+    app.register_blueprint(profiles_bp)
     register_cli(app)
     _register_error_handlers(app)
     app.logger.info("application started config=%s", selected.__name__)
