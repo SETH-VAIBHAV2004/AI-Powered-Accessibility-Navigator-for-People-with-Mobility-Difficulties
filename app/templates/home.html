@@ -6,6 +6,7 @@
       <h1>Hello, {{ current_user.name }}</h1>
       <p class="lede">Account type: {{ "Administrator" if current_user.is_admin else "User" }}.</p>
       <p>You are signed in. Route planning opens when pathway data is available for the area you choose.</p>
+      <p><a href="{{ url_for('profiles.profile_page') }}">Set a mobility profile</a> before you ask for a route.</p>
     {% else %}
       <h1>Plan a walking route</h1>
       <p class="lede">Choose a start and a destination anywhere. The route can avoid stairs, steep slopes, narrow paths, and blocked ways once pathway data is loaded.</p>

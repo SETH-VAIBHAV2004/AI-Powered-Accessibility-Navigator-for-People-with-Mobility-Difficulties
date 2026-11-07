@@ -25,6 +25,10 @@ def register_security_headers(app):
         if request.is_secure:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         private_pages = {"pages.home", "auth.login_page", "auth.register_page"}
-        if request.path.startswith("/api/") or request.endpoint in private_pages:
+        if (
+            request.path.startswith("/api/")
+            or request.endpoint in private_pages
+            or request.blueprint == "profiles"
+        ):
             response.headers["Cache-Control"] = "no-store"
         return response

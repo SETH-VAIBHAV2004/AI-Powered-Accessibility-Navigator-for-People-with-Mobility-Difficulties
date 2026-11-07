@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block sheet_class %}sheet-wide{% endblock %}
+{% block title %}Mobility profile · Accessibility Navigator{% endblock %}
+{% block content %}
+  <section class="panel">
+    <h1>Mobility profile</h1>
+    <p class="lede">Hard limits remove paths. Weights only add preference on top of distance. Unknown details stay unknown unless you choose to remove them. The starting points are initial settings, not a universal standard.</p>
+    {% if active %}
+      <p><strong>In use:</strong> {{ active.name }}. {{ active.summary }}</p>
+    {% else %}
+      <p><strong>In use:</strong> none. Choose a starting point or save your own profile before asking for a route.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="starting-points">
+    <h2 id="starting-points">Starting points</h2>
+    <ul class="profile-list">
+      {% for item in presets %}
+        <li class="profile-row{% if item.in_use %} is-selected{% endif %}">
+          <div>
+            <h3>{{ item.name }}{% if item.in_use %} <span class="status-text">In use</span>{% endif %}</h3>
+            <p>{{ item.summary }}</p>
+          </div>
+          <div class="action-row">
+            <form method="post" action="{{ url_for('profiles.default_page', profile_id=item.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="button button-quiet" type="submit">Use {{ item.name }}</button>
+            </form>
+            <form method="post" action="{{ url_for('profiles.copy_page', profile_id=item.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="button button-quiet" type="submit">Copy {{ item.name }}</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="your-profiles">
+    <h2 id="your-profiles">Your profiles</h2>
+    {% if profiles %}
+      <ul class="profile-list">
+        {% for item in profiles %}
+          <li class="profile-row{% if item.in_use %} is-selected{% endif %}">
+            <div>
+              <h3>{{ item.name }}{% if item.in_use %} <span class="status-text">In use</span>{% endif %}</h3>
+              <p>{{ item.summary }}</p>
+            </div>
+            <div class="action-row">
+              <form method="post" action="{{ url_for('profiles.default_page', profile_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button button-quiet" type="submit">Use {{ item.name }}</button>
+              </form>
+              <a class="button button-quiet" href="{{ url_for('profiles.edit_page', profile_id=item.id) }}">Edit {{ item.name }}</a>
+              <form method="post" action="{{ url_for('profiles.delete_page', profile_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button button-quiet" type="submit">Delete {{ item.name }}</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>You have not saved a personal profile.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="profile-form-title">
+    <h2 id="profile-form-title">{{ "Edit profile" if editing_id else "New profile" }}</h2>
+    {% if errors %}
+      <div class="form-alert" role="alert">
+        <p>Check the fields below.</p>
+        <ul>
+          {% for key, message in errors.items() %}
+            <li><a href="#{{ key }}">{{ message }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('profiles.update_page', profile_id=editing_id) if editing_id else url_for('profiles.create_page') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" maxlength="80" required value="{{ form.name }}" {% if errors.name %}aria-invalid="true" aria-describedby="name-error"{% endif %}>
+        {% if errors.name %}<p id="name-error" class="field-error">{{ errors.name }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="profile_type">Type</label>
+        <select id="profile_type" name="profile_type">
+          {% for value, label in [("custom", "Custom"), ("wheelchair", "Wheelchair"), ("limited_mobility", "Limited mobility"), ("general", "General")] %}
+            <option value="{{ value }}" {% if form.profile_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="max_slope_degrees">Maximum slope (degrees)</label>
+        <input id="max_slope_degrees" name="max_slope_degrees" type="number" min="0" max="20" step="0.1" inputmode="decimal" value="{{ form.max_slope_degrees }}" {% if errors.max_slope_degrees %}aria-invalid="true" aria-describedby="slope-error"{% else %}aria-describedby="slope-hint"{% endif %}>
+        <p id="slope-hint" class="field-hint">Leave blank for no slope limit. Steeper paths are removed.</p>
+        {% if errors.max_slope_degrees %}<p id="slope-error" class="field-error">{{ errors.max_slope_degrees }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="min_width_m">Minimum width (metres)</label>
+        <input id="min_width_m" name="min_width_m" type="number" min="0.5" max="3" step="0.1" inputmode="decimal" value="{{ form.min_width_m }}" {% if errors.min_width_m %}aria-invalid="true" aria-describedby="width-error"{% else %}aria-describedby="width-hint"{% endif %}>
+        <p id="width-hint" class="field-hint">Leave blank for no width limit. Narrower paths are removed.</p>
+        {% if errors.min_width_m %}<p id="width-error" class="field-error">{{ errors.min_width_m }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="walking_speed_mps">Walking speed (metres per second)</label>
+        <input id="walking_speed_mps" name="walking_speed_mps" type="number" min="0.3" max="2" step="0.05" inputmode="decimal" required value="{{ form.walking_speed_mps }}" {% if errors.walking_speed_mps %}aria-invalid="true" aria-describedby="speed-error"{% endif %}>
+        {% if errors.walking_speed_mps %}<p id="speed-error" class="field-error">{{ errors.walking_speed_mps }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="surface_preference">Surface preference</label>
+        <select id="surface_preference" name="surface_preference">
+          {% for value, label in [("any", "Any recorded surface"), ("paved", "Prefer paved"), ("firm", "Prefer firm")] %}
+            <option value="{{ value }}" {% if form.surface_preference == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="choice">
+        <input type="hidden" name="avoid_stairs" value="false">
+        <input id="avoid_stairs" name="avoid_stairs" type="checkbox" value="true" {% if form.avoid_stairs %}checked{% endif %}>
+        <label for="avoid_stairs">Remove paths that have stairs</label>
+      </div>
+      <div class="choice">
+        <input type="hidden" name="block_on_verified_obstacles" value="false">
+        <input id="block_on_verified_obstacles" name="block_on_verified_obstacles" type="checkbox" value="true" {% if form.block_on_verified_obstacles %}checked{% endif %}>
+        <label for="block_on_verified_obstacles">Remove paths with a verified obstacle</label>
+      </div>
+      <div class="choice">
+        <input type="hidden" name="exclude_unknown" value="false">
+        <input id="exclude_unknown" name="exclude_unknown" type="checkbox" value="true" {% if form.exclude_unknown %}checked{% endif %}>
+        <label for="exclude_unknown">Remove paths when stairs, width, or slope is unknown</label>
+      </div>
+      <fieldset>
+        <legend>Extra cost</legend>
+        <p class="field-hint">These numbers add preference. They do not replace the hard limits, and they cannot make a path count as shorter than its distance.</p>
+        <div class="weight-grid">
+          {% for key, label in [("distance", "Distance"), ("slope", "Slope"), ("surface", "Surface"), ("width", "Width"), ("ramp", "Ramp"), ("uncertainty", "Uncertainty")] %}
+            <div class="field">
+              <label for="weight_{{ key }}">{{ label }}</label>
+              <input id="weight_{{ key }}" name="weight_{{ key }}" type="number" min="0" max="20" step="0.1" inputmode="decimal" required value="{{ form['weight_' ~ key] }}" {% if errors['weight_' ~ key] %}aria-invalid="true"{% endif %}>
+              {% if errors['weight_' ~ key] %}<p class="field-error">{{ errors['weight_' ~ key] }}</p>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <button class="button button-primary" type="submit">{{ "Save changes" if editing_id else "Save profile" }}</button>
+    </form>
+  </section>
+{% endblock %}

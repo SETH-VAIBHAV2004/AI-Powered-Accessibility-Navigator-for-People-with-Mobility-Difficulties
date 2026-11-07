@@ -20,7 +20,7 @@ The product is a navigation tool, not a brochure.
 - Leaflet and the typeface are served by this app. OpenStreetMap tiles stay on the OpenStreetMap tile host, with the required attribution.
 - Admin screens are tables with filters and written status, not a wall of statistic cards.
 
-Sign-in, registration, and the signed-in home screen are in place. The map, mobility profiles, and reports follow.
+Sign-in, registration, the signed-in home screen, and mobility profiles are in place. The map and reports follow.
 
 ## What is included
 
@@ -59,6 +59,8 @@ python -m flask --app wsgi:app create-admin
 ```
 
 The command refuses to change the role of an email that already has an account. Passwords are stored with scrypt. A new password must be 10 to 128 characters. Sign-in failures use one message for an unknown email, a wrong password, and a deactivated account.
+
+Open `/profile` after signing in. Three starting points are stored with the database migration: Wheelchair, Limited mobility, and General. They are initial settings, not a universal accessibility standard. Use one directly, or copy it and change the limits. A hard limit removes a path. A weight only adds preference on top of distance. Leaving slope or width blank means there is no hard limit. Unknown stairs, width, and slope stay available unless “remove unknown” is turned on.
 
 ```powershell
 ruff check .

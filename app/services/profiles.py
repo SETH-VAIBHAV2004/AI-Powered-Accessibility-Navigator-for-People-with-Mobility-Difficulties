@@ -40,6 +40,10 @@ def create_profile(user, payload):
     return profile
 
 
+def get_owned_profile(user, profile_id):
+    return _owned_profile(user, profile_id)
+
+
 def update_profile(user, profile_id, payload):
     profile = _owned_profile(user, profile_id)
     cleaned = _clean_payload(payload, profile)
